@@ -1,0 +1,27 @@
+name: Auto_Update_Plan
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *' # 台灣時間每天下午4點自動更新
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Run logic
+        run: |
+          pip install yfinance requests pandas
+          python main.py
+      - name: Commit change
+        run: |
+          git config --global user.name "alvan-bot"
+          git config --global user.email "bot@github.com"
+          git add .
+          git commit -m "Auto Update Data" || exit 0
+          git push
