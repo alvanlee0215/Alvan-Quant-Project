@@ -1,27 +1,24 @@
-name: Auto_Update_Plan
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 8 * * *' # 台灣時間每天下午4點自動更新
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Run logic
-        run: |
-          pip install yfinance requests pandas
-          python main.py
-      - name: Commit change
-        run: |
-          git config --global user.name "alvan-bot"
-          git config --global user.email "bot@github.com"
-          git add .
-          git commit -m "Auto Update Data" || exit 0
-          git push
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alvan 執行指令</title>
+    <style>
+        body { background: #000; color: #7ee787; font-family: monospace; padding: 30px; }
+        .box { border: 2px solid #238636; padding: 20px; border-radius: 10px; }
+        .highlight { color: #fff; font-size: 24px; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🚀 季度執行清單</h2>
+        <div id="mode">等待數據更新...</div>
+        <hr style="border: 0.5px solid #30363d; margin: 20px 0;">
+        <div class="highlight" id="shares">
+            00631L: -- 股<br>
+            QLD: -- 股
+        </div>
+    </div>
+</body>
+</html>
