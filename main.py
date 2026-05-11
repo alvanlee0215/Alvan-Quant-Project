@@ -1,42 +1,32 @@
 import yfinance as yf
-import json, os, requests
-
-# 策略參數
-BASE_BUDGET = 200000
-VAULT_FILE = 'investment_vault.json'
-
-def get_taiex_pe():
-    try:
-        url = "https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?response=json"
-        res = requests.get(url)
-        data = res.json()
-        return float(data['data'][-1][2]) # 抓取最新本益比
-    except:
-        return 29.25 # 失敗時的保守值
+import requests, os
 
 def execute():
-    pe = get_taiex_pe()
-    tickers = yf.Tickers('00631L.TW QLD TWD=X')
-    p_tw = tickers.tickers['00631L.TW'].fast_info['last_price']
-    p_us = tickers.tickers['QLD'].fast_info['last_price']
-    fx = tickers.tickers['TWD=X'].fast_info['last_price']
+    # 1. 抓資料
+    pe = float(requests.get("https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?response=json").json()['data'][-1][2])
+    tk = yf.Tickers('00631L.TW QLD TWD=X')
+    p_tw = tk.tickers['00631L.TW'].fast_info['last_price']
+    p_us = tk.tickers['QLD'].fast_info['last_price']
+    fx = tk.tickers['TWD=X'].fast_info['last_price']
     
-    if os.path.exists(VAULT_FILE):
-        with open(VAULT_FILE, 'r') as f: vault = json.load(f)
-    else:
-        vault = {"season": 1, "war_chest": 0}
+    # 2. 算股數 (預算 20 萬)
+    amt = 100000 if pe > 28 else 200000
+    s_tw = int((amt*0.7)//p_tw)
+    s_us = int(((amt*0.3)/fx)//p_us)
 
-    # 邏輯判定
-    amt = BASE_BUDGET * 0.5 if pe > 28 else (BASE_BUDGET + vault["war_chest"] if pe < 18 else BASE_BUDGET)
-    if pe > 28: vault["war_chest"] += (BASE_BUDGET * 0.5)
-    elif pe < 18: vault["war_chest"] = 0
-
-    print(f"\n--- 第 {vault['season']}/24 季 ---")
-    print(f"偵測 P/E: {pe} | 模式: {'過熱' if pe>28 else ('大跌' if pe<18 else '常態')}")
-    print(f"✅ 00631L: {int((amt*0.7)//p_tw)} 股")
-    print(f"✅ QLD: {int(((amt*0.3)/fx)//p_us)} 股")
-    
-    vault["season"] += 1
-    with open(VAULT_FILE, 'w') as f: json.dump(vault, f, indent=4)
+    # 3. 強制寫入 index.html 讓網頁變動
+    output = f"""
+    <html><body style="background:#000;color:#7ee787;font-family:monospace;padding:20px;font-size:20px;">
+    <h2>Alvan 執行指令</h2>
+    <p>偵測 PE: {pe}</p>
+    <p>模式: {'過熱減半' if pe > 28 else '常態投入'}</p>
+    <hr>
+    <p style="color:#fff;">✅ 00631L: {s_tw} 股</p>
+    <p style="color:#fff;">✅ QLD: {s_us} 股</p>
+    <p style="font-size:12px;color:#8b949e;">最後更新: 2026-05-12</p>
+    </body></html>
+    """
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(output)
 
 if __name__ == "__main__": execute()
